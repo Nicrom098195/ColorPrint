@@ -5,6 +5,7 @@ import math
 import os
 from tkinter import filedialog
 from datetime import datetime
+from config import *
 
 def curTime():
     now = datetime.now()
@@ -48,34 +49,10 @@ def pixels(image, max_size):
 
 name=browseImage() #Drawing's name
 
-pxs=4 #Pixel size
-
-#Max size (mm), it won't be the exact picture size, but it will be the maximum size the picture can reach (the actual size will be the smallest multiple of pxs)
-ms=80
-
-#Size multiplier, multiplies the size of the pixel, to get smaller ones, or even to get some pixels to go over other ones.
-smp=0.8
-
 #Pixels array
 ar=pixels(Image.open(name), int((ms//pxs)))
 
 name=name.split(".")[0].split("/")[len(name.split(".")[0].split("/"))-1]
-
-#Offsets (mm)
-dz=13.7 #Z down
-uz=18 #Z up
-xos=60 #X offset
-yos=0 #Y offset
-bos=2 #Border offset from drawing
-
-bx=220 #Bed X
-by=220 #Bed Y
-
-#Colors multipliers
-rmp=1
-ymp=1
-bmp=1
-kmp=0.6
 
 wx=len(ar[0])*pxs
 wy=len(ar)*pxs
@@ -83,30 +60,14 @@ wy=len(ar)*pxs
 sx=(bx-wx)/2
 sy=(by-wy)/2
 
-mx=235 #Max X
-my=222 #Max Y
 if sx+wx+xos>mx:
     sx+=(sx+wx+5)-mx
 
 if sy+wy+yos>my:
     sy+=(sy+wy+5)-my
-    
-#Shapes:
-#0:square
-#1:circle
-shape=1
 
 print("Start at",sx+xos,sy+yos,", end at",sx+wx+xos,sy+wy+yos)
 print("Size:",wx,wy)
-
-# Start g-code (not your slicer's one, because we aren't gonna need heating)
-sgc="""G28
-G90
-G1 F10000
-TIMELAPSE_TAKE_FRAME
-
-; Created on Color image engine
-"""
 
 sgc=sgc+'; On date '+curTime()+'\n; {"pxs":'+str(pxs)+',"smp":'+str(smp)+',"rmp":'+str(rmp)+',"ymp":'+str(ymp)+',"bmp":'+str(bmp)+',"kmp":'+str(kmp)+'}\n\n'
 
@@ -114,27 +75,6 @@ gr=sgc+"G1 Z"+str(uz)+"\n"
 gb=sgc+"G1 Z"+str(uz)+"\nG1 X"+str(sx+xos-bos)+" Y"+str(sy+yos-bos)+"\nG1 Z"+str(dz)+"\nG1 X"+str(sx+wx+xos+bos)+"\nG1 Y"+str(sy+wy+yos+bos)+"\nG1 X"+str(sx+xos-bos)+"\nG1 Y"+str(sy+yos-bos)+"\nG1 Z"+str(uz)+"\n"
 gy=sgc+"G1 Z"+str(uz)+"\n"
 gk=sgc+"G1 Z"+str(uz)+"\n"
-
-
-# End g-code (not your slicer's one, because we aren't gonna need cooling)
-
-egc="""
-
-
-G90
-G1 Z50 F400
-G1 X0 Y222 F7000
-M300
-M300
-M300
-TIMELAPSE_TAKE_FRAME
-G4 P3000
-LOAD_PEN"""
-
-# Gcode to put between every layer
-lgc="""
-TIMELAPSE_TAKE_FRAME
-"""
 
 tot=len(ar)*len(ar[0])
 #act:tot=x:100 => x=act*100/tot
